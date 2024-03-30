@@ -11,7 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import ru.mai.opros.entity.enums.AnswerType;
+import ru.mai.opros.generated.dto.AnswerType;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -20,7 +20,7 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "question_answers")
-public class QuestionAnswer {
+public class AnswerParam {
     @Id
     @GeneratedValue
     private UUID id;
@@ -40,7 +40,7 @@ public class QuestionAnswer {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        QuestionAnswer that = (QuestionAnswer) o;
+        AnswerParam that = (AnswerParam) o;
         return Objects.equals(id, that.id);
     }
 

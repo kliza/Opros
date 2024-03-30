@@ -4,10 +4,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -25,6 +27,9 @@ public class Respondent {
 
     @Column(name = "email")
     private String email;
+
+    @OneToMany(mappedBy = "respondent")
+    private Collection<RespondentAnswer> respondentAnswers;
 
     @Override
     public boolean equals(Object o) {

@@ -1,6 +1,13 @@
 package ru.mai.opros.entity.enums;
 
-public enum UserRole {
+import org.springframework.security.core.GrantedAuthority;
+
+public enum UserRole implements GrantedAuthority {
     POLL_MANAGER,
-    POLL_ANALYST
+    POLL_ANALYST;
+
+    @Override
+    public String getAuthority() {
+        return this.name();
+    }
 }

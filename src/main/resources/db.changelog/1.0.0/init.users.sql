@@ -4,7 +4,8 @@ create table if not exists users
     login    varchar not null,
     password varchar not null,
     name     varchar,
-    role     varchar not null
+    role     varchar not null,
+    unique (login)
 );
 
 create index if not exists users_login_index

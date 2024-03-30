@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -32,7 +33,10 @@ public class Question {
     private PollPage page;
 
     @OneToMany(mappedBy = "question")
-    private Set<QuestionAnswer> answerParams;
+    private Set<AnswerParam> answerParams;
+
+    @OneToMany(mappedBy = "question")
+    private Set<RespondentAnswer> respondentAnswers;
 
     @Override
     public boolean equals(Object o) {

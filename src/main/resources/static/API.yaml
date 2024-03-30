@@ -118,10 +118,11 @@ paths:
   /v1/questions/:
     post:
       description: Добавить новый вопрос
-      operationId: create
+      operationId: createQuestion
       tags:
         - Question
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -137,7 +138,7 @@ paths:
   /v1/questions/{id}:
     put:
       description: Изменить вопрос
-      operationId: update
+      operationId: updateQuestion
       tags:
         - Question
       parameters:
@@ -148,6 +149,7 @@ paths:
             type: string
             format: uuid
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -161,7 +163,7 @@ paths:
                 $ref: '#/components/schemas/QuestionDto'
     delete:
       description: Удалить вопрос
-      operationId: delete
+      operationId: deleteQuestion
       tags:
         - Question
       parameters:
@@ -178,7 +180,7 @@ paths:
   /v1/questions/{questionId}/answers:
     post:
       description: Добавить ответ на вопрос
-      operationId: create
+      operationId: createAnswerParam
       tags:
         - Answer
       parameters:
@@ -189,6 +191,7 @@ paths:
             type: string
             format: uuid
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -204,7 +207,7 @@ paths:
   /v1/questions/{questionId}/answers/{id}:
     put:
       description: Изменение ответа на вопрос
-      operationId: update
+      operationId: updateAnswerParam
       tags:
         - Answer
       parameters:
@@ -221,6 +224,7 @@ paths:
             type: string
             format: uuid
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -234,7 +238,7 @@ paths:
                 $ref: '#/components/schemas/AnswerParamDto'
     delete:
       description: Удаление ответа на вопрос
-      operationId: delete
+      operationId: deleteAnswerParam
       tags:
         - Answer
       parameters:
@@ -270,13 +274,13 @@ components:
       description: Ответы респондента на опрос
       properties:
         respondent:
-          $ref: '#/components/schemas/Respondent'
+          $ref: '#/components/schemas/RespondentDto'
         answers:
           type: array
           items:
             $ref: '#/components/schemas/QuestionAnswer'
 
-    Respondent:
+    RespondentDto:
       type: object
       properties:
         id:
@@ -330,7 +334,9 @@ components:
           description: Количество респондентов, прошедших опрос
           type: integer
         questionStat:
-          $ref: '#/components/schemas/QuestionStat'
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionStat'
 
     QuestionStat:
       type: object

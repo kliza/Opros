@@ -74,7 +74,7 @@ openApiGenerate {
     importMappings.put("Sort", "org.springframework.data.domain.Sort")
 
     generatorName = "spring"
-    inputSpec = "$rootDir/src/main/resources/static/API.yml".toString()
+    inputSpec = "$rootDir/src/main/resources/static/API.yaml".toString()
     outputDir = "$rootDir/src/main/java".toString()
     apiPackage = "ru.mai.opros.generated.api"
     modelPackage = "ru.mai.opros.generated.dto"
