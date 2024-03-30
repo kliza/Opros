@@ -1,0 +1,454 @@
+openapi: 3.0.3
+info:
+  title: Constructor Opros
+  description: Конструктор опросов
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8080/opros/api/'
+tags:
+  - name: Poll
+  - name: Question
+  - name: Answer
+paths:
+  /v1/polls/:
+    get:
+      x-spring-paginated: true
+      description: Получить все опросы пользователя
+      operationId: getAll
+      tags:
+        - Poll
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedPollsResponse'
+    post:
+      description: Создать новый опрос
+      operationId: create
+      tags:
+        - Poll
+      responses:
+        201:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PollDto'
+
+  /v1/polls/{id}:
+    get:
+      description: Получить опрос по ID
+      operationId: getById
+      tags:
+        - Poll
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PollDto'
+    delete:
+      description: Удалить опрос по ID
+      operationId: deleteById
+      tags:
+        - Poll
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Успешный запрос
+
+  /v1/polls/{id}/stat:
+    get:
+      description: Получить статистику опроса по ID
+      operationId: getStatById
+      tags:
+        - Poll
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PollStat'
+
+  /v1/polls/{id}/analytic:
+    get:
+      description: Получить аналитику опроса по ID
+      operationId: getAnalyticById
+      tags:
+        - Poll
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PollAnalytic'
+
+  /v1/questions/:
+    post:
+      description: Добавить новый вопрос
+      operationId: create
+      tags:
+        - Question
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuestionRequest'
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionDto'
+
+  /v1/questions/{id}:
+    put:
+      description: Изменить вопрос
+      operationId: update
+      tags:
+        - Question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuestionRequest'
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionDto'
+    delete:
+      description: Удалить вопрос
+      operationId: delete
+      tags:
+        - Question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Успешный запрос
+
+  /v1/questions/{questionId}/answers:
+    post:
+      description: Добавить ответ на вопрос
+      operationId: create
+      tags:
+        - Answer
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerParamDto'
+      responses:
+        201:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerParamDto'
+
+  /v1/questions/{questionId}/answers/{id}:
+    put:
+      description: Изменение ответа на вопрос
+      operationId: update
+      tags:
+        - Answer
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerParamDto'
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerParamDto'
+    delete:
+      description: Удаление ответа на вопрос
+      operationId: delete
+      tags:
+        - Answer
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Успешный запрос
+components:
+  schemas:
+    PollAnalytic:
+      type: object
+      description: Аналитика опроса
+      properties:
+        respondents:
+          description: Список респондентов с ответами на вопросы
+          type: array
+          items:
+            $ref: '#/components/schemas/RespondentAnswers'
+
+    RespondentAnswers:
+      type: object
+      description: Ответы респондента на опрос
+      properties:
+        respondent:
+          $ref: '#/components/schemas/Respondent'
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionAnswer'
+
+    Respondent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fio:
+          type: string
+        email:
+          type: string
+
+    QuestionAnswer:
+      type: object
+      description: Ответ на вопрос
+      properties:
+         question:
+           type: string
+           description: Текст вопроса
+         answer:
+           type: string
+           description: Ответ респондента
+
+    CreateQuestionRequest:
+      type: object
+      description: Запрос создания вопроса
+      properties:
+        value:
+          type: string
+          description: Текст вопроса
+        pageId:
+          type: string
+          format: uuid
+          description: ID страницы опроса
+
+    PollDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollPageDto'
+
+    PollStat:
+      type: object
+      description: Статистика опроса
+      properties:
+        respondentsCount:
+          description: Количество респондентов, прошедших опрос
+          type: integer
+        questionStat:
+          $ref: '#/components/schemas/QuestionStat'
+
+    QuestionStat:
+      type: object
+      description: Статистика ответов на вопрос
+      properties:
+        value:
+          type: string
+          description: Текст вопроса
+        answersCount:
+          type: integer
+          description: Количество ответов
+
+    PollPageDto:
+      type: object
+      description: Страница опроса с вопросами
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        pageNumber:
+          type: integer
+          description: Номер страницы
+        questions:
+          $ref: '#/components/schemas/QuestionDto'
+
+    QuestionDto:
+      type: object
+      description: Вопрос
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        value:
+          type: string
+          description: Текст вопроса
+        answerParams:
+          $ref: '#/components/schemas/AnswerParamDto'
+
+    AnswerParamDto:
+      type: object
+      description: Параметры ответа на вопрос
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        value:
+          type: string
+          description: Текст варианта ответа (не изменяемый)
+        type:
+          $ref: '#/components/schemas/AnswerType'
+
+    AnswerType:
+      type: string
+      description: |
+        Тип ответа:
+        * `SCALE` - Шкала мнений
+        * `SINGLE_CHOICE` - Одиночный выбор
+        * `MULTIPLE_CHOICE` - Множественный выбор
+        * `MANUAL_TEXT` - Ручной ввод ответа
+      enum:
+        - SCALE
+        - SINGLE_CHOICE
+        - MULTIPLE_CHOICE
+        - MANUAL_TEXT
+
+    PagedPollsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollDto'
+        pageable:
+          $ref: '#/components/schemas/Pageable'
+        totalElements:
+          type: integer
+          format: int64
+        last:
+          type: boolean
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+        sort:
+          $ref: '#/components/schemas/Sort'
+        numberOfElements:
+          type: integer
+        first:
+          type: boolean
+        empty:
+          type: boolean
+
+    Pageable:
+      type: object
+      properties:
+        sort:
+          $ref: '#/components/schemas/Sort'
+        offset:
+          type: integer
+        pageSize:
+          type: integer
+        pageNumber:
+          type: integer
+        paged:
+          type: boolean
+        unpaged:
+          type: boolean
+    Sort:
+      type: object
+      properties:
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+        empty:
+          type: boolean
