@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: init.polls
+      author: gorbunova.elizaveta
+      changes:
+        - sqlFile:
+            path: classpath:db/changelog/1.0.0/init.polls.sql

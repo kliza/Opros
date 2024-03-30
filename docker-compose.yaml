@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres
+    container_name: postgres-opros
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: local
+      POSTGRES_USER: local
+      POSTGRES_PASSWORD: local
+    networks:
+      - opros-network
+networks:
+  opros-network:
