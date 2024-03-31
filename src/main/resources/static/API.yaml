@@ -9,7 +9,62 @@ tags:
   - name: Poll
   - name: Question
   - name: Answer
+  - name: Respondent
 paths:
+  /v1/polls/{id}/resp:
+    post:
+      description: Создать респондента
+      operationId: createRespondent
+      tags:
+        - Respondent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRespondentRequest'
+      responses:
+        201:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespondentDto'
+
+  /v1/questions/{id}/resp:
+    post:
+      description: Добавить ответ респондента на вопрос
+      operationId: addRespondentAnswer
+      tags:
+        - Respondent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionAnswer'
+      responses:
+        201:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespondentAnswers'
+
   /v1/polls/:
     get:
       x-spring-paginated: true
@@ -72,6 +127,27 @@ paths:
       responses:
         200:
           description: Успешный запрос
+
+  /v1/polls/{id}/pages:
+    post:
+      description: Добавить страницу в опрос
+      operationId: addPage
+      tags:
+        - Poll
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        201:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PollPageDto'
 
   /v1/polls/{id}/stat:
     get:
@@ -295,12 +371,15 @@ components:
       type: object
       description: Ответ на вопрос
       properties:
-         question:
-           type: string
-           description: Текст вопроса
-         answer:
-           type: string
-           description: Ответ респондента
+        respondentId:
+          type: string
+          format: uuid
+        questionValue:
+          type: string
+          description: Текст вопроса
+        value:
+          type: string
+          description: Ответ респондента
 
     CreateQuestionRequest:
       type: object
@@ -361,7 +440,9 @@ components:
           type: integer
           description: Номер страницы
         questions:
-          $ref: '#/components/schemas/QuestionDto'
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionDto'
 
     QuestionDto:
       type: object
@@ -375,7 +456,9 @@ components:
           type: string
           description: Текст вопроса
         answerParams:
-          $ref: '#/components/schemas/AnswerParamDto'
+          type: array
+          items:
+            $ref: '#/components/schemas/AnswerParamDto'
 
     AnswerParamDto:
       type: object
@@ -433,6 +516,14 @@ components:
           type: boolean
         empty:
           type: boolean
+
+    CreateRespondentRequest:
+      type: object
+      properties:
+        fio:
+          type: string
+        email:
+          type: string
 
     Pageable:
       type: object

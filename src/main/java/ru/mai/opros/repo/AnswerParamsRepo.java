@@ -5,5 +5,5 @@ import ru.mai.opros.entity.AnswerParam;
 
 import java.util.UUID;
 
-public interface AnswerRepo extends JpaRepository<AnswerParam, UUID> {
+public interface AnswerParamsRepo extends JpaRepository<AnswerParam, UUID> {
 }

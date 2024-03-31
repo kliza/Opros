@@ -12,5 +12,5 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
   liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.yaml
+    change-log: classpath:db.changelog/db.changelog-master.yaml
     enabled: ${DB_MIGRATION_ENABLE:true}

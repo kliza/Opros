@@ -2,6 +2,7 @@ package ru.mai.opros.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,6 +15,7 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
 @EnableWebSecurity
+@Profile("!local")
 public class SecurityConfig {
 
     @Bean
@@ -30,7 +32,6 @@ public class SecurityConfig {
                 .csrf(Customizer.withDefaults())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
-                                mvcMatcherBuilder.pattern(HttpMethod.GET, "/login/**"),
                                 mvcMatcherBuilder.pattern(HttpMethod.GET, "/health/**"),
                                 mvcMatcherBuilder.pattern(HttpMethod.GET, "/actuator/**"),
                                 mvcMatcherBuilder.pattern(HttpMethod.GET, "/swagger-ui/**"),

@@ -4,9 +4,11 @@ ru/mai/opros/generated/api/AnswerApi.java
 ru/mai/opros/generated/api/ApiUtil.java
 ru/mai/opros/generated/api/PollApi.java
 ru/mai/opros/generated/api/QuestionApi.java
+ru/mai/opros/generated/api/RespondentApi.java
 ru/mai/opros/generated/dto/AnswerParamDto.java
 ru/mai/opros/generated/dto/AnswerType.java
 ru/mai/opros/generated/dto/CreateQuestionRequest.java
+ru/mai/opros/generated/dto/CreateRespondentRequest.java
 ru/mai/opros/generated/dto/Pageable.java
 ru/mai/opros/generated/dto/PagedPollsResponse.java
 ru/mai/opros/generated/dto/PollAnalytic.java

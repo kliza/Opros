@@ -2,6 +2,7 @@ package ru.mai.opros.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.boot.actuate.endpoint.SecurityContext;
 import org.springframework.data.domain.Page;
@@ -10,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.mai.opros.entity.Poll;
+import ru.mai.opros.entity.PollPage;
 import ru.mai.opros.entity.Question;
 import ru.mai.opros.entity.Respondent;
 import ru.mai.opros.entity.RespondentAnswer;
@@ -23,13 +25,17 @@ import ru.mai.opros.generated.dto.QuestionAnswer;
 import ru.mai.opros.generated.dto.QuestionStat;
 import ru.mai.opros.generated.dto.RespondentAnswers;
 import ru.mai.opros.generated.dto.RespondentDto;
+import ru.mai.opros.repo.PollPageRepo;
 import ru.mai.opros.repo.PollRepo;
+import ru.mai.opros.repo.UserRepo;
 import ru.mai.opros.service.PollService;
+import ru.mai.opros.service.UserService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -40,13 +46,16 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class PollServiceImpl implements PollService {
     private final PollRepo pollRepo;
+    private final PollPageRepo pollPageRepo;
     private final ModelMapper mapper;
+    private final UserService userService;
 
     @Override
     public PollDto createNewPoll() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Poll poll = pollRepo.save(new Poll()
-                .setOwner((User) authentication.getPrincipal()));
+                .setOwner((User) userService.loadUserByUsername("local-manager")));
+//                .setOwner((User) authentication.getPrincipal())); //todo
 
         return mapper.map(poll, PollDto.class);
     }
@@ -111,8 +120,10 @@ public class PollServiceImpl implements PollService {
                 .flatMap(pollPage -> pollPage.getQuestions().stream())
                 .toList();
         long respondentsCount = questions.stream()
+                .filter(question -> CollectionUtils.isNotEmpty(question.getRespondentAnswers()))
                 .flatMap(question -> question.getRespondentAnswers().stream())
                 .map(RespondentAnswer::getRespondent)
+                .filter(Objects::nonNull)
                 .distinct()
                 .count();
         List<QuestionStat> questionStats = questions.stream()
@@ -124,5 +135,23 @@ public class PollServiceImpl implements PollService {
         return new PollStat()
                 .respondentsCount((int) respondentsCount)
                 .questionStat(questionStats);
+    }
+
+    @Override
+    public PollPageDto addPage(UUID id) {
+        PollPage savedPage = pollRepo.findById(id)
+                .map(poll -> {
+                    Set<PollPage> pollPages = poll.getPages();
+                    PollPage pollPage = new PollPage()
+                            .setPageNumber(pollPages.size() + 1)
+                            .setPoll(poll);
+                    pollPages.add(pollPage);
+
+                    return pollPage;
+                })
+                .map(pollPageRepo::save)
+                .orElseThrow(() -> new EntityNotFoundException("Опрос %s не найден".formatted(id)));
+
+        return mapper.map(savedPage, PollPageDto.class);
     }
 }

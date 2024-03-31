@@ -8,6 +8,7 @@ import ru.mai.opros.generated.api.PollApi;
 import ru.mai.opros.generated.dto.PagedPollsResponse;
 import ru.mai.opros.generated.dto.PollAnalytic;
 import ru.mai.opros.generated.dto.PollDto;
+import ru.mai.opros.generated.dto.PollPageDto;
 import ru.mai.opros.generated.dto.PollStat;
 import ru.mai.opros.service.PollService;
 
@@ -47,5 +48,10 @@ public class PollController implements PollApi {
     @Override
     public ResponseEntity<PollStat> getStatById(UUID id) {
         return ResponseEntity.ok(pollService.getStat(id));
+    }
+
+    @Override
+    public ResponseEntity<PollPageDto> addPage(UUID id) {
+        return ResponseEntity.status(201).body(pollService.addPage(id));
     }
 }

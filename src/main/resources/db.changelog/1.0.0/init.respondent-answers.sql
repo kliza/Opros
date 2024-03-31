@@ -1,6 +1,7 @@
 create table if not exists respondent_answers
 (
     id            uuid primary key,
+    value         text,
     respondent_id uuid not null references respondents on delete cascade,
     poll_id       uuid not null references polls on delete cascade,
     question_id   uuid not null references questions on delete cascade

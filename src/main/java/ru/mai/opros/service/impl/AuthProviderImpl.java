@@ -1,6 +1,7 @@
 package ru.mai.opros.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +12,7 @@ import ru.mai.opros.service.UserService;
 
 @Service
 @RequiredArgsConstructor
+@Profile("!local")
 public class AuthProviderImpl implements AuthProvider {
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;

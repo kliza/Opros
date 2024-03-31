@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +30,9 @@ public class Poll {
 
     @OneToMany(mappedBy = "poll")
     private Set<PollPage> pages;
+
+    @OneToMany(mappedBy = "poll")
+    private Set<Respondent> respondents;
 
     @Override
     public boolean equals(Object o) {
