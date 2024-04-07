@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Редактирование опроса</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+          integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+    <style>
+        .sliderticks {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 5px 20px;
+
+        }
+
+        .sliderticks span {
+            display: flex;
+            justify-content: center;
+            width: 1px;
+            height: 10px;
+            background: #d3d3d3;
+            line-height: 40px;
+        }
+    </style>
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
+        crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+<script th:inline="javascript">
+    let poll = {
+        name: "",
+        pages: []
+    };
+
+    let nextPageNumber = 1;
+    let questionNumber = 1;
+    let questionAnswers = new Map();
+
+    function addPage() {
+        console.log(nextPageNumber);
+        let curPageNum = nextPageNumber;
+        nextPageNumber = nextPageNumber + 1;
+        let page = document.createElement("div");
+        page.className = "card";
+        page.id = 'page' + curPageNum;
+
+        let pageHeader = createPageHeader(curPageNum, curPageNum);
+        let pageBody = createEmptyPageBody(curPageNum);
+
+        page.appendChild(pageHeader);
+        page.appendChild(pageBody);
+
+        let pollAccordion = document.getElementById("pollAccordion");
+        pollAccordion.appendChild(page);
+        let pageObj = {
+            pageNumber: curPageNum,
+            questions: []
+        };
+        poll.pages.push(pageObj);
+    }
+
+    function createDeletePageBtn(pageNumber) {
+        let btnCol = document.createElement("div");
+        btnCol.className = "col my-2";
+
+        let delPageBtn = document.createElement("button");
+        delPageBtn.className = "btn btn-info";
+        delPageBtn.textContent = "Удалить страницу";
+        delPageBtn.id = "delPageBtn" + pageNumber;
+        delPageBtn.onclick = function () {
+            deletePage(pageNumber);
+        };
+
+        btnCol.appendChild(delPageBtn);
+
+        return btnCol;
+    }
+
+    function deletePage(pageNumber) {
+        let page = document.getElementById('page' + pageNumber);
+        let poll = page.parentNode;
+        page.remove();
+        recalculatePageNumbers(poll);
+        let pageObj = poll.pages.filter(page => page.pageNumber === pageNumber).at(0);
+        let pageIndex = poll.pages.indexOf(pageObj);
+        poll.pages.splice(pageIndex, 1);
+    }
+
+    function recalculatePageNumbers(poll) {
+        let nextPageNum = 1;
+        poll.childNodes.forEach(card => {
+            if (card.className === 'card') {
+                let cardHeader = card.childNodes[0];
+                let collapse = card.childNodes[1];
+                let cardBody = collapse.childNodes[0];
+                let questionBtnCont = cardBody.childNodes[0];
+                let questionBtnCol = questionBtnCont.childNodes[0].childNodes[0];
+                let questionBtn = questionBtnCol.childNodes[0];
+                let headerRow = cardHeader.childNodes[0];
+                let pageNameCol = headerRow.childNodes[0];
+                let delPageBtn = headerRow.childNodes[1].childNodes[0];
+                let pageName = pageNameCol.childNodes[0];
+                let pageCollapseBtn = pageName.childNodes[0];
+
+                pageCollapseBtn.textContent = 'Страница №' + nextPageNum;
+                pageCollapseBtn.setAttribute("data-target", "#collapse" + nextPageNum);
+                pageCollapseBtn.setAttribute("aria-controls", "collapse" + nextPageNum);
+                pageCollapseBtn.setAttribute("aria-expanded", "false");
+
+                collapse.id = "collapse" + nextPageNum;
+                collapse.setAttribute("aria-labelledby", "head_" + nextPageNum);
+
+                cardHeader.id = "head_" + nextPageNum;
+
+                questionBtnCont.id = "questionBtnCont" + nextPageNum;
+
+                headerRow.id = "headerRow" + nextPageNum;
+
+                delPageBtn.id = "delPageBtn" + nextPageNum;
+
+                questionBtnCol.id = "questionBtnCol" + nextPageNum;
+                questionBtn.id = "addQuestionBtn" + nextPageNum;
+
+                nextPageNum = nextPageNum + 1;
+            }
+        });
+        nextPageNumber = nextPageNum;
+    }
+
+    function createEmptyPageBody(curPageNum) {
+        let pageBody = document.createElement("div");
+        pageBody.className = "collapse hide";
+
+        pageBody.id = "collapse" + curPageNum;
+        pageBody.setAttribute("aria-labelledby", "head_" + curPageNum);
+        pageBody.setAttribute("data-parent", "#pollAccordion");
+
+        let cardBody = document.createElement("div");
+        cardBody.className = "card-body";
+        cardBody.id = "pageBody" + curPageNum;
+
+        let questionContainer = createQuestionButtonContainer(curPageNum);
+
+        cardBody.appendChild(questionContainer);
+        pageBody.appendChild(cardBody);
+
+        return pageBody;
+    }
+
+    function createQuestionButtonContainer(curPageNum) {
+        let questionContainer = document.createElement("div");
+        questionContainer.className = "container my-2";
+        questionContainer.id = 'questionBtnCont' + curPageNum;
+
+        let addQuestionButton = createNewAddQuestionButton(curPageNum);
+
+        questionContainer.appendChild(addQuestionButton);
+
+        return questionContainer;
+    }
+
+    function createNewQuestion(curPageNum) {
+        let cardBody = document.getElementById("pageBody" + curPageNum);
+        let questionObj = {
+            value: "",
+            type: "",
+            questionNumber: undefined,
+            answerParams: []
+        }
+        let page = poll.pages.filter(page => page.pageNumber === curPageNum).at(0);
+        page.questions.push(questionObj);
+
+        let questionContainer = document.createElement("div");
+        questionContainer.className = "container my-2";
+        let currentQuestionNum = questionNumber;
+        questionObj.questionNumber = currentQuestionNum;
+        questionNumber = questionNumber + 1;
+        questionContainer.id = "questionContainer" + currentQuestionNum;
+
+        let row = document.createElement("div");
+        row.className = "row";
+        row.id = "questionRow" + currentQuestionNum;
+
+        let textCol = document.createElement("div");
+        textCol.className = "col";
+
+        let questionText = document.createElement("input");
+        questionText.type = "text";
+        questionText.className = "form-control";
+        questionText.name = "questionText";
+        questionText.placeholder = "Текст вопроса";
+        questionText.id = 'questionText' + currentQuestionNum;
+        questionText.onchange = function () {
+            onChangeQuestionText(curPageNum, currentQuestionNum);
+        };
+
+        textCol.appendChild(questionText);
+        row.appendChild(textCol);
+        row.appendChild(getAnswerTypes(currentQuestionNum, questionObj, curPageNum));
+        row.appendChild(createNewAddAnswerBtn(questionContainer, currentQuestionNum, curPageNum));
+        row.appendChild(createDeleteQuestionBtn(questionContainer, currentQuestionNum, curPageNum));
+        questionContainer.appendChild(row);
+        let questionButton = document.getElementById('questionBtnCont' + curPageNum);
+        cardBody.insertBefore(questionContainer, questionButton);
+    }
+
+    function onChangeQuestionText(curPageNum, currentQuestionNum) {
+        let pollObj = poll
+            .pages.filter(page => page.pageNumber === curPageNum).at(0);
+        let questionObj = pollObj
+            .questions.filter(question => question.questionNumber === currentQuestionNum).at(0);
+        let questionText = document.getElementById('questionText' + currentQuestionNum);
+        questionObj.value = questionText.value;
+    }
+
+    function getAnswerTypes(currentQuestionNum, questionObj, curPageNum) {
+        let typeCol = document.createElement("div");
+        typeCol.className = "col";
+
+        let typeSelect = document.createElement("div");
+        typeSelect.className = "col form-group";
+
+        let selectControl = document.createElement("select");
+        selectControl.className = "form-control";
+        selectControl.name = "answerType";
+        selectControl.id = "answerType" + currentQuestionNum;
+        selectControl.onchange = function () {
+            answerTypeOnChange(currentQuestionNum, curPageNum);
+        };
+
+        let singleChoice = document.createElement("option");
+        singleChoice.text = "Одиночный выбор";
+        singleChoice.value = "SINGLE_CHOICE";
+        questionObj.type = singleChoice.value;
+
+        let multiChoice = document.createElement("option");
+        multiChoice.text = "Множественный выбор";
+        multiChoice.value = "MULTIPLE_CHOICE";
+
+        let scaleChoice = document.createElement("option");
+        scaleChoice.text = "Шкала";
+        scaleChoice.value = "SCALE";
+
+        selectControl.appendChild(singleChoice);
+        selectControl.appendChild(multiChoice);
+        selectControl.appendChild(scaleChoice);
+        typeSelect.appendChild(selectControl);
+        typeCol.appendChild(typeSelect);
+
+        return typeCol;
+    }
+
+    function answerTypeOnChange(currentQuestionNum, curPageNum) {
+        let selectControl = document.getElementById("answerType" + currentQuestionNum);
+        hideAddAnswerButtonIfScale(selectControl, currentQuestionNum);
+        deleteAnswersIfScale(selectControl, currentQuestionNum, curPageNum);
+        drawOrHideScale(currentQuestionNum);
+
+        let pollObj = poll
+            .pages.filter(page => page.pageNumber === curPageNum).at(0);
+        let questionObj = pollObj
+            .questions.filter(question => question.questionNumber === currentQuestionNum).at(0);
+        questionObj.type = selectControl.options[selectControl.selectedIndex].value;
+    }
+
+    function drawOrHideScale(currentQuestionNum) {
+        let selectControl = document.getElementById("answerType" + currentQuestionNum);
+        if (selectControl.value === 'SCALE') {
+            let scale = document.createElement("div");
+            scale.className = "col range";
+            scale.id = "range" + currentQuestionNum;
+            let rangeCont = document.createElement("div");
+            rangeCont.className = "container";
+            let range = document.createElement("input");
+            range.type = "range";
+            range.className = "custom-range";
+            range.min = "1";
+            range.max = "5";
+            range.step = "1";
+            let sliderticks = document.createElement("div");
+            sliderticks.className = "sliderticks";
+            for (let i = 1; i < 6; i++) {
+                let span = document.createElement("span");
+                span.textContent = i;
+                sliderticks.appendChild(span);
+            }
+
+            rangeCont.appendChild(range);
+            rangeCont.appendChild(sliderticks);
+            scale.appendChild(rangeCont);
+
+            let questionCont = document.getElementById("questionContainer" + currentQuestionNum);
+            questionCont.appendChild(scale);
+        } else {
+            let scale = document.getElementById("range" + currentQuestionNum);
+            scale.remove();
+        }
+    }
+
+    function deleteAnswersIfScale(selectControl, currentQuestionNum, curPageNum) {
+        let answerNumber = questionAnswers.get(currentQuestionNum);
+        while (answerNumber > 0 && selectControl.value === 'SCALE') {
+            let answerId = "answerRow" + currentQuestionNum + answerNumber;
+            let answer = document.getElementById(answerId);
+            answer.remove();
+
+            answerNumber = answerNumber - 1;
+            questionAnswers.set(currentQuestionNum, answerNumber);
+
+            let pollObj = poll
+                .pages.filter(page => page.pageNumber === curPageNum).at(0);
+            console.log(pollObj);
+            let questionObj = pollObj
+                .questions.filter(question => question.questionNumber === currentQuestionNum).at(0);
+            let answerObj = questionObj
+                .answerParams.filter(answerParam => answerParam.number === answerNumber).at(0);
+            let answerIdx = questionObj.answerParams.indexOf(answerObj);
+            questionObj.answerParams.splice(answerIdx, 1);
+        }
+    }
+
+    function hideAddAnswerButtonIfScale(selectControl, currentQuestionNum) {
+        let btn = document.getElementById("addAnswerBtn" + currentQuestionNum);
+        if (selectControl.value === 'SCALE') {
+            btn.style.display = "none";
+        } else {
+            btn.style.display = "block";
+        }
+    }
+
+    function addNewAnswer(currentQuestionNum, currentPageNumber) {
+        let questionContainer = document.getElementById("questionContainer" + currentQuestionNum);
+        let questionObj = poll
+            .pages.filter(page => page.pageNumber === currentPageNumber).at(0)
+            .questions.filter(question => question.questionNumber === currentQuestionNum).at(0);
+        let answerObj = {
+            value: "",
+            number: undefined
+        }
+        questionObj.answerParams.push(answerObj);
+        let answerNumber = questionAnswers.get(currentQuestionNum);
+        if (answerNumber === undefined) {
+            answerNumber = 1;
+        } else {
+            answerNumber = answerNumber + 1;
+        }
+        questionAnswers.set(currentQuestionNum, answerNumber);
+        answerObj.number = answerNumber;
+
+        let answerRow = document.createElement("div");
+        answerRow.className = "row";
+        answerRow.id = "answerRow" + currentQuestionNum + answerNumber;
+
+        let answerCol = document.createElement("div");
+        answerCol.className = "col my-2";
+
+        let answerText = document.createElement("input");
+        answerText.type = "text";
+        answerText.className = "form-control";
+        answerText.name = "answerText";
+        answerText.placeholder = "Текст ответа";
+        answerText.id = "answer" + currentQuestionNum + '' + answerNumber;
+        answerText.onchange = function () {
+            onChangeAnswerText(currentPageNumber, currentQuestionNum, answerNumber);
+        };
+
+        answerCol.appendChild(answerText);
+        answerRow.appendChild(answerCol);
+        answerRow.appendChild(createDeleteAnswerBtn(answerNumber, currentQuestionNum, currentPageNumber))
+        questionContainer.appendChild(answerRow);
+    }
+
+    function onChangeAnswerText(curPageNum, currentQuestionNum, answerNumber) {
+        let questionObj = poll
+            .pages.filter(page => page.pageNumber === curPageNum).at(0)
+            .questions.filter(question => question.questionNumber === currentQuestionNum).at(0);
+        let answerObj = questionObj
+            .answerParams.filter(answerParam => answerParam.number === answerNumber).at(0);
+        let answerText = document.getElementById("answer" + currentQuestionNum + '' + answerNumber);
+
+        answerObj.value = answerText.value;
+    }
+
+    function createNewAddAnswerBtn(questionContainer, currentQuestionNum, curPageNum) {
+        let btnCol = document.createElement("div");
+        btnCol.className = "col";
+
+        let addAnswerBtn = document.createElement("button");
+        addAnswerBtn.className = "btn btn-info";
+        addAnswerBtn.textContent = "Добавить вариант ответа";
+        addAnswerBtn.id = "addAnswerBtn" + currentQuestionNum;
+        addAnswerBtn.type = "button";
+        addAnswerBtn.onclick = function () {
+            addNewAnswer(currentQuestionNum, curPageNum);
+        };
+
+        btnCol.appendChild(addAnswerBtn);
+
+        return btnCol;
+    }
+
+    function createNewAddQuestionButton(curPageNum) {
+        let row = document.createElement("div");
+        row.className = "row my-2";
+
+        let col = document.createElement("div");
+        col.className = "col";
+        col.id = 'questionBtnCol' + curPageNum;
+
+        let questionButton = document.createElement("button");
+        questionButton.className = "btn btn-info";
+        questionButton.type = "button";
+        questionButton.textContent = "Добавить вопрос";
+        questionButton.id = 'addQuestionBtn' + curPageNum;
+
+        questionButton.onclick = function () {
+            createNewQuestion(curPageNum);
+        }
+
+        col.appendChild(questionButton);
+        row.appendChild(col);
+
+        return row;
+    }
+
+    function createDeleteAnswerBtn(answerNumber, currentQuestionNum, curPageNum) {
+        let btnCol = document.createElement("div");
+        btnCol.className = "col my-2";
+
+        let addAnswerBtn = document.createElement("button");
+        addAnswerBtn.className = "btn btn-info";
+        addAnswerBtn.textContent = "Удалить ответ";
+        addAnswerBtn.id = "delAnswerBtn" + answerNumber;
+        addAnswerBtn.onclick = function () {
+            deleteAnswer(answerNumber, currentQuestionNum, curPageNum);
+        };
+
+        btnCol.appendChild(addAnswerBtn);
+
+        return btnCol;
+    }
+
+    function deleteAnswer(answerNumber, currentQuestionNum, curPageNum) {
+        let answer = document.getElementById("answerRow" + currentQuestionNum + answerNumber);
+        answer.remove();
+        let questionObj = poll
+            .pages.filter(page => page.pageNumber === curPageNum).at(0)
+            .questions.filter(question => question.questionNumber === currentQuestionNum).at(0);
+        let answerObj = questionObj
+            .answerParams.filter(answerParam => answerParam.number === answerNumber).at(0);
+        let answerIdx = questionObj.answerParams.indexOf(answerObj);
+        questionObj.answerParams.splice(answerIdx, 1);
+    }
+
+    function createDeleteQuestionBtn(questionContainer, currentQuestionNum, curPageNum) {
+        let btnCol = document.createElement("div");
+        btnCol.className = "col";
+
+        let addAnswerBtn = document.createElement("button");
+        addAnswerBtn.className = "btn btn-info";
+        addAnswerBtn.textContent = "Удалить вопрос";
+        addAnswerBtn.id = "delQuestionBtn" + currentQuestionNum;
+        addAnswerBtn.onclick = function () {
+            deleteQuestion(currentQuestionNum, curPageNum);
+        };
+
+        btnCol.appendChild(addAnswerBtn);
+
+        return btnCol;
+    }
+
+    function deleteQuestion(currentQuestionNum, curPageNum) {
+        let questionContainer = document.getElementById("questionContainer" + currentQuestionNum);
+        questionContainer.remove();
+
+        let pageObj = poll
+            .pages.filter(page => page.pageNumber === curPageNum).at(0);
+        let questionObj = pageObj
+            .questions.filter(question => question.questionNumber === currentQuestionNum).at(0);
+        let questionIdx = pageObj.questions.indexOf(questionObj);
+        pageObj.questions.splice(questionIdx, 1);
+    }
+
+    function createPageHeader(curPageNum) {
+        let pageHeader = document.createElement("div");
+        pageHeader.className = "card-header";
+        pageHeader.id = "head_" + curPageNum;
+
+        let headerRow = document.createElement("div");
+        headerRow.className = "row";
+        headerRow.id = 'headerRow' + curPageNum;
+
+        let pageNameCol = document.createElement("div");
+        pageNameCol.className = "col my-2";
+
+        let pageName = document.createElement("h2");
+        pageName.className = "mb-0";
+
+        let pageCollapseBtn = document.createElement("button");
+        pageCollapseBtn.className = "btn btn-link btn-block text-left text-dark";
+        pageCollapseBtn.type = "button";
+        pageCollapseBtn.setAttribute("data-toggle", "collapse");
+        pageCollapseBtn.setAttribute("data-target", "#collapse" + curPageNum);
+        pageCollapseBtn.setAttribute("aria-controls", "collapse" + curPageNum);
+        pageCollapseBtn.textContent = 'Страница №' + curPageNum;
+
+
+        pageName.appendChild(pageCollapseBtn);
+        pageNameCol.appendChild(pageName);
+        headerRow.appendChild(pageNameCol);
+        headerRow.appendChild(createDeletePageBtn(curPageNum))
+        pageHeader.appendChild(headerRow);
+
+        return pageHeader;
+    }
+
+    function onChangePollName() {
+        let pollName = document.getElementById("pollName");
+        poll.name = pollName.value;
+    }
+</script>
+
+<div class="container my-2">
+
+    <div class="container my-2">
+        <nav class="navbar navbar-light bg-light border rounded-lg">
+            <a class="navbar-brand" href="http://localhost:8080/">Конструктор опросов</a>
+            <form class="form-inline my-2 my-lg-0">
+                <div class="row">
+                    <div class="col">
+                        <p class="my-1" th:text="${username}"></p>
+                    </div>
+                    <div class="col">
+                        <a href="/login?logout">
+                            <button class="btn btn-info" type="button">Выйти</button>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </nav>
+    </div>
+
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" aria-current="page"><a class="text-dark" href="http://localhost:8080/">Главная</a></li>
+                <li class="breadcrumb-item" aria-current="page"><a class="text-dark" href="http://localhost:8080/polls">Список опросов</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Опрос</li>
+            </ol>
+        </nav>
+        <input type="text" class="form-control" id="pollName"
+               placeholder="Название опроса"
+               th:value="${poll.name}" onchange="onChangePollName()"/>
+        <div class="accordion" id="pollAccordion">
+            <div class="card" th:id="'page' + ${page.pageNumber}" th:each="page : ${poll.pages}">
+                <div class="card-header" th:id="'head_' + ${page.pageNumber}">
+                    <script th:inline="javascript">
+                        nextPageNumber = [[${page.pageNumber}]] + 1;
+                        poll.pages.push({
+                            pageNumber: [[${page.pageNumber}]],
+                            questions: []
+                        });
+                        console.log(poll);
+                    </script>
+                    <div class="row" th:id="'headerRow' + ${page.pageNumber}">
+                        <div class="col my-2">
+                            <h2 class="mb-0">
+                                <button class="btn btn-link btn-block text-left text-dark" type="button" data-toggle="collapse"
+                                        th:data-target="'#collapse' + ${page.pageNumber}" aria-expanded="true"
+                                        th:aria-controls="'collapse' + ${page.pageNumber}"
+                                        th:text="'Страница №' + ${page.pageNumber}"></button>
+                            </h2>
+                        </div>
+                        <div class="col my-2">
+                            <button class="btn btn-info"
+                                    th:onclick="|deletePage(${page.pageNumber})|"
+                                    th:id="'delPageBtn' + ${page.pageNumber}">Удалить страницу
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div th:id="'collapse' + ${page.pageNumber}" class="collapse hide"
+                     th:aria-labelledby="'head_' + ${page.pageNumber}" data-parent="#pollAccordion">
+                    <div class="card-body" th:id="'pageBody' + ${page.pageNumber}">
+                        <div class="container my-2"
+                             th:id="'questionContainer' + ${question.questionNumber}"
+                             th:each="question : ${page.questions}">
+                            <script th:inline="javascript">
+                                questionNumber = [[${question.questionNumber}]] + 1;
+                                poll
+                                    .pages.filter(page => page.pageNumber === [[${page.pageNumber}]]).at(0)
+                                    .questions.push({
+                                    value: [[${question.value}]],
+                                    type: [[${question.type}]],
+                                    questionNumber: [[${question.questionNumber}]],
+                                    answerParams: []
+                                });
+                            </script>
+                            <div class="row" th:id="'questionRow' + ${question.questionNumber}">
+                                <div class="col">
+                                    <input type="text" class="form-control"
+                                           name="questionText"
+                                           placeholder="Текст вопроса"
+                                           th:id="'questionText' + ${question.questionNumber}"
+                                           th:onchange="|onChangeQuestionText(${page.pageNumber}, ${question.questionNumber})|"
+                                           th:value="${question.value}">
+                                </div>
+                                <div class="col">
+                                    <div class="col form-group">
+                                        <select class="form-control" name="answerType"
+                                                th:onchange="|answerTypeOnChange(${question.questionNumber})|"
+                                                th:id="'answerType' + ${question.questionNumber}">
+                                            <option value="SINGLE_CHOICE"
+                                                    th:selected="${question.type == 'SINGLE_CHOICE'} ? true : false">
+                                                Одиночный выбор
+                                            </option>
+                                            <option value="MULTIPLE_CHOICE"
+                                                    th:selected="${question.type == 'MULTIPLE_CHOICE'}">Множественный
+                                                выбор
+                                            </option>
+                                            <option value="SCALE"
+                                                    th:selected="${question.type == 'SCALE'}">Шкала
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <button class="btn btn-info"
+                                            th:id="'addAnswerBtn' + ${question.questionNumber}"
+                                            th:onclick="|addNewAnswer(${question.questionNumber}, ${page.pageNumber})|"
+                                            type="button">Добавить вариант ответа
+                                    </button>
+                                </div>
+                                <div class="col">
+                                    <button class="btn btn-info"
+                                            th:onclick="|deleteQuestion(${question.questionNumber}, ${page.pageNumber})|"
+                                            th:id="'delQuestionBtn' + ${question.questionNumber}">Удалить вопрос
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col range"
+                                 th:if="${question.type == T(ru.mai.opros.entity.enums.AnswerType).SCALE.name()}"
+                                 th:id="'range' + ${question.questionNumber}">
+                                <div class="container">
+                                    <input type="range" class="custom-range" min="1" max="5" step="1">
+                                    <div class="sliderticks">
+                                        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+                                </div>
+                            </div>
+                            <div class="row"
+                                 th:each="answer : ${question.answerParams}"
+                                 th:id="'answerRow' + ${question.questionNumber} + ${answer.number}">
+                                <script th:inline="javascript">
+                                    if ([[${answer.number}]] > questionAnswers.get([[${question.questionNumber}]])
+                                        || questionAnswers.get([[${question.questionNumber}]]) === undefined) {
+                                        questionAnswers.set([[${question.questionNumber}]], [[${answer.number}]]);
+                                    }
+                                    poll
+                                        .pages.filter(page => page.pageNumber === [[${page.pageNumber}]]).at(0)
+                                        .questions.filter(question => question.questionNumber === [[${question.questionNumber}]]).at(0)
+                                        .answerParams.push({
+                                        value: [[${answer.value}]],
+                                        number: [[${answer.number}]]
+                                    })
+                                </script>
+                                <div class="col my-2">
+                                    <input type="text" class="form-control" name="answerText"
+                                           placeholder="Текст ответа"
+                                           th:value="${answer.value}"
+                                           th:onchange="|onChangeAnswerText(${page.pageNumber}, ${question.questionNumber}, ${answer.number})|"
+                                           th:id="'answer' + ${question.questionNumber} + ${answer.number}">
+                                </div>
+                                <div class="col my-2">
+                                    <button class="btn btn-info"
+                                            th:onclick="|deleteAnswer(${answer.number}, ${question.questionNumber}, ${page.pageNumber})|"
+                                            th:id="'delAnswerBtn' + ${answer.number}">Удалить ответ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="container my-2"
+                             th:id="'questionBtnCont' + ${page.pageNumber}">
+                            <div class="row my-2">
+                                <div class="col" th:id="'questionBtnCol' + ${page.pageNumber}">
+                                    <button class="btn btn-info" type="button"
+                                            th:onclick="|createNewQuestion(${page.pageNumber})|"
+                                            th:id="'addQuestionBtn' + ${page.pageNumber}">Добавить вопрос
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button class="btn btn-info my-2" type="button" onclick="addPage()">Добавить страницу</button>
+            </div>
+            <div class="col">
+                <form th:action="@{/polls/{id}(id=${poll.id})}" method="post">
+                    <script>
+                        $("form").submit(function (event) {
+                            event.preventDefault();
+                            let url = $(this).attr("action");
+                            let postData = $(this).serializeArray();
+                            let pollJson = JSON.stringify(poll);
+                            postData.push({name: 'pollJson', value: pollJson});
+                            console.log(pollJson);
+                            $.post(url, postData, function () {
+                            });
+                        });
+                    </script>
+                    <button class="btn btn-info my-2" type="submit">Сохранить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

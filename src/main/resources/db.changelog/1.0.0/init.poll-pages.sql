@@ -6,7 +6,7 @@ create table if not exists poll_pages
 );
 
 create index if not exists poll_pages_poll_id_index
-    on public.poll_pages (poll_id);
+    on poll_pages (poll_id);
 
 comment on table poll_pages is 'Страницы опроса';
 comment on column poll_pages.poll_id is 'Опрос';

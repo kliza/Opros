@@ -1,20 +1,23 @@
 package ru.mai.opros.service;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import ru.mai.opros.generated.dto.PagedPollsResponse;
-import ru.mai.opros.generated.dto.PollAnalytic;
-import ru.mai.opros.generated.dto.PollDto;
-import ru.mai.opros.generated.dto.PollPageDto;
-import ru.mai.opros.generated.dto.PollStat;
+import org.springframework.security.core.Authentication;
+import ru.mai.opros.dto.PollAnalytic;
+import ru.mai.opros.dto.PollDto;
+import ru.mai.opros.dto.PollStat;
+import ru.mai.opros.entity.Poll;
+import ru.mai.opros.entity.PollPage;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface PollService {
-    PollDto createNewPoll();
+    Poll createNewPoll();
 
     void deletePoll(UUID id);
 
-    PagedPollsResponse getAll(Pageable pageable);
+    Page<Poll> getAll(Pageable pageable);
 
     PollAnalytic getAnalytic(UUID id);
 
@@ -22,5 +25,13 @@ public interface PollService {
 
     PollStat getStat(UUID id);
 
-    PollPageDto addPage(UUID id);
+    PollPage addPage(UUID id);
+
+    List<Poll> getAll(Authentication authentication);
+
+    UUID getPollIdByPageId(UUID pageId);
+
+    UUID getPollIdByQuestionId(UUID id);
+
+    PollDto updatePoll(UUID id, PollDto poll, Authentication authentication);
 }

@@ -4,6 +4,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -12,10 +14,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
+import ru.mai.opros.service.UserService;
 
 @Configuration
 @EnableWebSecurity
-@Profile("!local")
 public class SecurityConfig {
 
     @Bean
@@ -25,23 +27,21 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           HandlerMappingIntrospector introspector) throws Exception {
-
+                                           HandlerMappingIntrospector introspector,
+                                           AuthenticationProvider authenticationProvider) throws Exception {
         MvcRequestMatcher.Builder mvcMatcherBuilder = new MvcRequestMatcher.Builder(introspector);
         http
                 .csrf(Customizer.withDefaults())
                 .cors(Customizer.withDefaults())
+                .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
-                                mvcMatcherBuilder.pattern(HttpMethod.GET, "/health/**"),
-                                mvcMatcherBuilder.pattern(HttpMethod.GET, "/actuator/**"),
-                                mvcMatcherBuilder.pattern(HttpMethod.GET, "/swagger-ui/**"),
-                                mvcMatcherBuilder.pattern(HttpMethod.GET, "/swagger-ui.html**"),
-                                mvcMatcherBuilder.pattern(HttpMethod.GET, "/v3/api-docs/**"),
-                                mvcMatcherBuilder.pattern(HttpMethod.GET, "/v3/api-docs"))
+                                mvcMatcherBuilder.pattern(HttpMethod.GET, "/sign-up"),
+                                mvcMatcherBuilder.pattern(HttpMethod.POST, "/sign-up"))
                         .permitAll()
                         .anyRequest().authenticated())
                 .formLogin(loginConfigurer -> loginConfigurer
                         .loginPage("/login")
+                        .defaultSuccessUrl("/")
                         .permitAll())
                 .logout(logoutConfigurer -> logoutConfigurer
                         .invalidateHttpSession(true)
@@ -49,5 +49,15 @@ public class SecurityConfig {
                         .permitAll());
 
         return http.build();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authProvider(PasswordEncoder passwordEncoder,
+                                                  UserService userService) {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userService);
+        authProvider.setPasswordEncoder(passwordEncoder);
+
+        return authProvider;
     }
 }

@@ -1,5 +1,6 @@
 package ru.mai.opros.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,10 +8,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -27,12 +30,13 @@ public class PollPage {
     @Column(name = "page_number")
     private Integer pageNumber;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "poll_id")
     private Poll poll;
 
-    @OneToMany(mappedBy = "page")
-    private Set<Question> questions;
+    @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
+    @OrderBy("questionNumber ASC")
+    private List<Question> questions;
 
     @Override
     public boolean equals(Object o) {

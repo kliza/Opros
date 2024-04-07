@@ -1,16 +1,20 @@
 package ru.mai.opros.entity;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -28,8 +32,12 @@ public class Poll {
     @JoinColumn(name = "owner_id")
     private User owner;
 
-    @OneToMany(mappedBy = "poll")
-    private Set<PollPage> pages;
+    @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL)
+    @OrderBy("pageNumber ASC")
+    private List<PollPage> pages;
+
+    @Column(name = "name")
+    private String name;
 
     @OneToMany(mappedBy = "poll")
     private Set<Respondent> respondents;

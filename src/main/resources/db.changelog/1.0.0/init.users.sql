@@ -9,5 +9,5 @@ create table if not exists users
 );
 
 create index if not exists users_login_index
-    on public.users (login);
+    on users (login);
 

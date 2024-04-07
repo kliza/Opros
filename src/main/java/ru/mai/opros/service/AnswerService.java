@@ -1,13 +1,16 @@
 package ru.mai.opros.service;
 
-import ru.mai.opros.generated.dto.AnswerParamDto;
+
+import ru.mai.opros.entity.AnswerParam;
 
 import java.util.UUID;
 
 public interface AnswerService {
-    AnswerParamDto createParams(UUID questionId, AnswerParamDto answerParamDto);
+    AnswerParam createParams(UUID questionId, String value);
 
-    AnswerParamDto updateParams(UUID id, AnswerParamDto answerParamDto);
+    AnswerParam updateParams(UUID id, String value);
 
     void deleteParams(UUID id);
+
+    AnswerParam createParams(UUID id);
 }

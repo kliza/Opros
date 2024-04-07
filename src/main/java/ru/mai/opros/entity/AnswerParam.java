@@ -1,5 +1,6 @@
 package ru.mai.opros.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,7 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import ru.mai.opros.generated.dto.AnswerType;
+import ru.mai.opros.entity.enums.AnswerType;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -19,7 +20,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "question_answers")
+@Table(name = "answer_params")
 public class AnswerParam {
     @Id
     @GeneratedValue
@@ -28,13 +29,12 @@ public class AnswerParam {
     @Column(name = "value")
     private String value;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type")
-    private AnswerType type;
-
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "question_id")
     private Question question;
+
+    @Column(name = "number")
+    private Integer number;
 
     @Override
     public boolean equals(Object o) {
@@ -54,7 +54,6 @@ public class AnswerParam {
         return "QuestionAnswer{" +
                "id=" + id +
                ", value='" + value + '\'' +
-               ", type=" + type +
                '}';
     }
 }

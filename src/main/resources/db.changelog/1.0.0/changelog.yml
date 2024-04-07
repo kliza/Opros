@@ -6,17 +6,17 @@ databaseChangeLog:
         - sqlFile:
             path: classpath:db.changelog/1.0.0/init.users.sql
   - changeSet:
-      id: init.respondents
-      author: gorbunova.elizaveta
-      changes:
-        - sqlFile:
-            path: classpath:db.changelog/1.0.0/init.respondents.sql
-  - changeSet:
       id: init.polls
       author: gorbunova.elizaveta
       changes:
         - sqlFile:
             path: classpath:db.changelog/1.0.0/init.polls.sql
+  - changeSet:
+      id: init.respondents
+      author: gorbunova.elizaveta
+      changes:
+        - sqlFile:
+            path: classpath:db.changelog/1.0.0/init.respondents.sql
   - changeSet:
       id: init.poll-pages
       author: gorbunova.elizaveta
@@ -34,7 +34,7 @@ databaseChangeLog:
       author: gorbunova.elizaveta
       changes:
         - sqlFile:
-            path: classpath:db.changelog/1.0.0/init.question-answers.sql
+            path: classpath:db.changelog/1.0.0/init.answers-params.sql
   - changeSet:
       id: init.respondent-answers
       author: gorbunova.elizaveta

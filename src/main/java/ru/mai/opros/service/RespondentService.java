@@ -1,14 +1,12 @@
 package ru.mai.opros.service;
 
-import ru.mai.opros.generated.dto.CreateRespondentRequest;
-import ru.mai.opros.generated.dto.QuestionAnswer;
-import ru.mai.opros.generated.dto.RespondentAnswers;
-import ru.mai.opros.generated.dto.RespondentDto;
+import ru.mai.opros.entity.Respondent;
+import ru.mai.opros.entity.RespondentAnswer;
 
 import java.util.UUID;
 
 public interface RespondentService {
-    RespondentAnswers addAnswer(UUID questionId, QuestionAnswer questionAnswer);
+    RespondentAnswer addAnswer(UUID questionId);
 
-    RespondentDto createRespondent(UUID pollId, CreateRespondentRequest createRespondentRequest);
+    Respondent createRespondent(UUID pollId);
 }
