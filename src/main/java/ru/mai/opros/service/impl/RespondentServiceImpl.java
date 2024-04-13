@@ -1,16 +1,18 @@
 package ru.mai.opros.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import ru.mai.opros.dto.RespondentDto;
 import ru.mai.opros.entity.Respondent;
 import ru.mai.opros.entity.RespondentAnswer;
+import ru.mai.opros.repo.AnswerParamsRepo;
 import ru.mai.opros.repo.PollRepo;
 import ru.mai.opros.repo.QuestionRepo;
 import ru.mai.opros.repo.RespondentAnswersRepo;
 import ru.mai.opros.repo.RespondentRepo;
 import ru.mai.opros.service.RespondentService;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -20,39 +22,24 @@ public class RespondentServiceImpl implements RespondentService {
     private final QuestionRepo questionRepo;
     private final RespondentRepo respondentRepo;
     private final PollRepo pollRepo;
-    private final ModelMapper mapper;
+    private final AnswerParamsRepo answerParamsRepo;
 
     @Override
-    public RespondentAnswer addAnswer(UUID questionId) {
-//        Respondent respondent = respondentRepo.findById(questionAnswer.getRespondentId())
-//                .orElseThrow(() -> new EntityNotFoundException("Респондент %s не найден"
-//                        .formatted(questionAnswer.getRespondentId())));
-//
-//        RespondentAnswer savedAnswer = questionRepo.findById(questionId)
-//                .map(question -> new RespondentAnswer()
-//                        .setRespondent(respondent)
-//                        .setValue(questionAnswer.getValue())
-//                        .setPoll(question.getPage().getPoll())
-//                        .setQuestion(question))
-//                .map(respondentAnswersRepo::save)
-//                .orElseThrow(() -> new EntityNotFoundException("Вопрос %s не найден".formatted(questionId)));
-//        respondent.getRespondentAnswers().add(savedAnswer);
-//
-//        return new RespondentAnswers()
-//                .respondent(mapper.map(respondent, RespondentDto.class))
-//                .answers(respondent.getRespondentAnswers().stream()
-//                        .map(respondentAnswer ->
-//                        mapper.map(respondentAnswer, QuestionAnswer.class))
-//                        .toList());
-        return new RespondentAnswer();
-    }
+    public RespondentDto saveAnswers(UUID id, RespondentDto respondentDto) {
+        Respondent respondent = respondentRepo.save(new Respondent()
+                .setFio(respondentDto.getFio())
+                .setEmail(respondentDto.getEmail())
+                .setPoll(pollRepo.getReferenceById(id)));
 
-    @Override
-    public Respondent createRespondent(UUID pollId) {
-//        Respondent respondent = respondentRepo.save(new Respondent()
-//                .setFio(createRespondentRequest.getFio())
-//                .setEmail(createRespondentRequest.getEmail())
-//                .setPoll(pollRepo.getReferenceById(pollId)));
-        return new Respondent();
+        respondentDto.getAnswers().stream()
+                .filter(answer -> Objects.nonNull(answer.getValue()))
+                .forEach(answer -> respondentAnswersRepo.save(new RespondentAnswer()
+                        .setRespondent(respondent)
+                        .setPoll(respondent.getPoll())
+                        .setQuestion(questionRepo.getReferenceById(answer.getQuestionId()))
+                        .setAnswerParam(answerParamsRepo.getReferenceById(answer.getId()))
+                        .setValue(answer.getValue())));
+
+        return respondentDto;
     }
 }

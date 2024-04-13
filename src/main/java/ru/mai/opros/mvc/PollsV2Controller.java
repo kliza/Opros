@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import ru.mai.opros.dto.PollAnalytic;
 import ru.mai.opros.dto.PollDto;
 import ru.mai.opros.entity.Poll;
 import ru.mai.opros.service.PollService;
@@ -73,5 +74,17 @@ public class PollsV2Controller {
         model.addAttribute("username", authentication.getName());
 
         return "redirect:/polls";
+    }
+
+    @GetMapping("/polls/{id}/analytic")
+    @PreAuthorize("hasRole('ROLE_POLL_MANAGER')")
+    public String getAnalytic(@PathVariable UUID id,
+                              Model model,
+                              Authentication authentication) {
+        PollAnalytic analytic = pollService.getPollAnalytic(id);
+        model.addAttribute("analytic", analytic);
+        model.addAttribute("username", authentication.getName());
+
+        return "pollAnalytic";
     }
 }

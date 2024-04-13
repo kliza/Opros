@@ -4,29 +4,26 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import ru.mai.opros.dto.AnswerAnalytic;
+import ru.mai.opros.dto.PageAnalytic;
 import ru.mai.opros.dto.PollAnalytic;
 import ru.mai.opros.dto.PollDto;
-import ru.mai.opros.dto.PollPageDto;
-import ru.mai.opros.dto.PollStat;
+import ru.mai.opros.dto.QuestionAnalytic;
 import ru.mai.opros.entity.AnswerParam;
 import ru.mai.opros.entity.Poll;
 import ru.mai.opros.entity.PollPage;
 import ru.mai.opros.entity.Question;
+import ru.mai.opros.entity.RespondentAnswer;
 import ru.mai.opros.entity.User;
-import ru.mai.opros.repo.PollPageRepo;
+import ru.mai.opros.entity.enums.AnswerType;
 import ru.mai.opros.repo.PollRepo;
-import ru.mai.opros.repo.QuestionRepo;
 import ru.mai.opros.service.PollService;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,8 +33,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PollServiceImpl implements PollService {
     private final PollRepo pollRepo;
-    private final PollPageRepo pollPageRepo;
-    private final QuestionRepo questionRepo;
     private final ModelMapper mapper;
 
     @Override
@@ -53,30 +48,56 @@ public class PollServiceImpl implements PollService {
     }
 
     @Override
-    public Page<Poll> getAll(Pageable pageable) {
-        return pollRepo.findAll(pageable);
+    public PollAnalytic getPollAnalytic(UUID id) {
+        return pollRepo.findById(id)
+                .map(poll -> new PollAnalytic()
+                        .setPollName(poll.getName())
+                        .setRespondentsCount(poll.getRespondents().size())
+                        .setPages(getPagesAnalytic(poll)))
+                .orElseThrow(() -> new EntityNotFoundException("Опрос %s не найден".formatted(id)));
     }
 
-    @Override
-    public PollAnalytic getAnalytic(UUID id) {
-        //todo
-//        Map<Respondent, List<RespondentAnswer>> respondentsWithAnswers = pollRepo.findById(id)
-//                .map(Poll::getPages).stream()
-//                .flatMap(Set::stream)
-//                .flatMap(pollPage -> pollPage.getQuestions().stream())
-//                .flatMap(question -> question.getRespondentAnswers().stream())
-//                .collect(Collectors.groupingBy(RespondentAnswer::getRespondent));
-//        List<RespondentAnswer> respondents = new ArrayList<>();
-//
-//        respondentsWithAnswers.forEach((respondent, answers) -> respondents.add(new RespondentAnswers()
-//                .respondent(mapper.map(respondent, RespondentDto.class))
-//                .answers(answers.stream()
-//                        .map(respondentAnswer -> mapper.map(respondentAnswer, QuestionAnswer.class))
-//                        .toList())));
-//
-//        return new PollAnalytic()
-//                .respondents(respondents);
-        return new PollAnalytic();
+    private List<PageAnalytic> getPagesAnalytic(Poll poll) {
+        return poll.getPages().stream()
+                .map(page -> new PageAnalytic()
+                        .setNumber(page.getPageNumber())
+                        .setQuestions(getQuestionsAnalytic(page)))
+                .toList();
+    }
+
+    private List<QuestionAnalytic> getQuestionsAnalytic(PollPage page) {
+        return page.getQuestions().stream()
+                .map(question -> new QuestionAnalytic()
+                        .setNumber(question.getQuestionNumber())
+                        .setType(question.getType())
+                        .setText(question.getValue())
+                        .setAnswers(getAnswersAnalytic(question)))
+                .toList();
+    }
+
+    private List<AnswerAnalytic> getAnswersAnalytic(Question question) {
+        List<AnswerAnalytic> list;
+        if (question.getType().equals(AnswerType.SCALE)) {
+            list = question.getRespondentAnswers().stream()
+                    .collect(Collectors.groupingBy(RespondentAnswer::getValue, Collectors.counting()))
+                    .entrySet().stream()
+                    .map(entry -> new AnswerAnalytic()
+                            .setText(entry.getKey())
+                            .setAnswersCount(entry.getValue().intValue()))
+                    .toList();
+        } else {
+            list = question.getRespondentAnswers().stream()
+                    .collect(Collectors.groupingBy(answer -> answer.getAnswerParam().getValue(), Collectors.counting()))
+                    .entrySet().stream()
+                    .map(entry -> new AnswerAnalytic()
+                            .setText(entry.getKey())
+                            .setAnswersCount(entry.getValue().intValue()))
+                    .toList();
+        }
+
+        log.info(""+list);
+
+        return list;
     }
 
     @Override
@@ -87,69 +108,9 @@ public class PollServiceImpl implements PollService {
     }
 
     @Override
-    public PollStat getStat(UUID id) {
-        //todo
-//        List<Question> questions = pollRepo.findById(id)
-//                .map(Poll::getPages).stream()
-//                .flatMap(Set::stream)
-//                .flatMap(pollPage -> pollPage.getQuestions().stream())
-//                .toList();
-//        long respondentsCount = questions.stream()
-//                .filter(question -> CollectionUtils.isNotEmpty(question.getRespondentAnswers()))
-//                .flatMap(question -> question.getRespondentAnswers().stream())
-//                .map(RespondentAnswer::getRespondent)
-//                .filter(Objects::nonNull)
-//                .distinct()
-//                .count();
-//        List<QuestionStat> questionStats = questions.stream()
-//                .map(question -> new QuestionStat()
-//                        .value(question.getValue())
-//                        .answersCount(question.getRespondentAnswers().size()))
-//                .toList();
-//
-//        return new PollStat()
-//                .respondentsCount((int) respondentsCount)
-//                .questionStat(questionStats);
-        return new PollStat();
-    }
-
-    @Override
-    public PollPage addPage(UUID id) {
-        return pollRepo.findById(id)
-                .map(poll -> {
-                    List<PollPage> pollPages = poll.getPages();
-                    PollPage pollPage = new PollPage()
-                            .setPageNumber(pollPages.size() + 1)
-                            .setPoll(poll);
-                    pollPages.add(pollPage);
-
-                    return pollPage;
-                })
-                .map(pollPageRepo::save)
-                .orElseThrow(() -> new EntityNotFoundException("Опрос %s не найден".formatted(id)));
-    }
-
-    @Override
     public List<Poll> getAll(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         return pollRepo.findAllByOwner(user);
-    }
-
-    @Override
-    public UUID getPollIdByPageId(UUID pageId) {
-        return pollPageRepo.findById(pageId)
-                .map(PollPage::getPoll)
-                .map(Poll::getId)
-                .orElseThrow(() -> new EntityNotFoundException("Страница %s не найдена".formatted(pageId)));
-    }
-
-    @Override
-    public UUID getPollIdByQuestionId(UUID id) {
-        return questionRepo.findById(id)
-                .map(Question::getPage)
-                .map(PollPage::getPoll)
-                .map(Poll::getId)
-                .orElseThrow(() -> new EntityNotFoundException("Вопрос %s не найден"));
     }
 
     @Override
@@ -182,7 +143,10 @@ public class PollServiceImpl implements PollService {
                             questionsToSave.forEach((questionNumber, questionToSave) -> {
                                 if (existingQuestions.containsKey(questionNumber)) {
                                     Question existingQuestion = existingQuestions.get(questionNumber);
-                                    existingQuestion.setValue(questionToSave.getValue());
+                                    existingQuestion
+                                            .setValue(questionToSave.getValue())
+                                            .setType(questionToSave.getType());
+
                                     Map<Integer, AnswerParam> existingParams = existingQuestion.getAnswerParams().stream()
                                             .collect(Collectors.toMap(AnswerParam::getNumber, Function.identity()));
                                     Map<Integer, AnswerParam> paramsToSave = questionToSave.getAnswerParams().stream()

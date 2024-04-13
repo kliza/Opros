@@ -34,6 +34,7 @@
 <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
 <script th:inline="javascript">
     let poll = {
+        id: undefined,
         name: "",
         pages: []
     };
@@ -262,11 +263,17 @@
         deleteAnswersIfScale(selectControl, currentQuestionNum, curPageNum);
         drawOrHideScale(currentQuestionNum);
 
-        let pollObj = poll
+        let pageObj = poll
             .pages.filter(page => page.pageNumber === curPageNum).at(0);
-        let questionObj = pollObj
+        let questionObj = pageObj
             .questions.filter(question => question.questionNumber === currentQuestionNum).at(0);
         questionObj.type = selectControl.options[selectControl.selectedIndex].value;
+        if (selectControl.value === 'SCALE') {
+            questionObj.answerParams = [{
+                value: "3",
+                number: 1
+            }];
+        }
     }
 
     function drawOrHideScale(currentQuestionNum) {
@@ -274,7 +281,7 @@
         if (selectControl.value === 'SCALE') {
             let scale = document.createElement("div");
             scale.className = "col range";
-            scale.id = "range" + currentQuestionNum;
+            scale.id = "range_" + currentQuestionNum + "1";
             let rangeCont = document.createElement("div");
             rangeCont.className = "container";
             let range = document.createElement("input");
@@ -298,8 +305,10 @@
             let questionCont = document.getElementById("questionContainer" + currentQuestionNum);
             questionCont.appendChild(scale);
         } else {
-            let scale = document.getElementById("range" + currentQuestionNum);
-            scale.remove();
+            let scale = document.getElementById("range_1");
+            if (scale !== undefined && scale !== null) {
+                scale.remove();
+            }
         }
     }
 
@@ -524,6 +533,12 @@
         let pollName = document.getElementById("pollName");
         poll.name = pollName.value;
     }
+
+    function copyToClipboard() {
+        let text = "http://localhost:8080/polls/" + poll.id + "/respondent";
+        console.log(text);
+        navigator.clipboard.writeText(text);
+    }
 </script>
 
 <div class="container my-2">
@@ -549,7 +564,6 @@
     <div class="container">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item" aria-current="page"><a class="text-dark" href="http://localhost:8080/">Главная</a></li>
                 <li class="breadcrumb-item" aria-current="page"><a class="text-dark" href="http://localhost:8080/polls">Список опросов</a>
                 </li>
                 <li class="breadcrumb-item active" aria-current="page">Опрос</li>
@@ -562,12 +576,12 @@
             <div class="card" th:id="'page' + ${page.pageNumber}" th:each="page : ${poll.pages}">
                 <div class="card-header" th:id="'head_' + ${page.pageNumber}">
                     <script th:inline="javascript">
+                        poll.id = [[${poll.id}]];
                         nextPageNumber = [[${page.pageNumber}]] + 1;
                         poll.pages.push({
                             pageNumber: [[${page.pageNumber}]],
                             questions: []
                         });
-                        console.log(poll);
                     </script>
                     <div class="row" th:id="'headerRow' + ${page.pageNumber}">
                         <div class="col my-2">
@@ -615,7 +629,7 @@
                                 <div class="col">
                                     <div class="col form-group">
                                         <select class="form-control" name="answerType"
-                                                th:onchange="|answerTypeOnChange(${question.questionNumber})|"
+                                                th:onchange="|answerTypeOnChange(${question.questionNumber}, ${page.pageNumber})|"
                                                 th:id="'answerType' + ${question.questionNumber}">
                                             <option value="SINGLE_CHOICE"
                                                     th:selected="${question.type == 'SINGLE_CHOICE'} ? true : false">
@@ -645,15 +659,6 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="col range"
-                                 th:if="${question.type == T(ru.mai.opros.entity.enums.AnswerType).SCALE.name()}"
-                                 th:id="'range' + ${question.questionNumber}">
-                                <div class="container">
-                                    <input type="range" class="custom-range" min="1" max="5" step="1">
-                                    <div class="sliderticks">
-                                        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
-                                </div>
-                            </div>
                             <div class="row"
                                  th:each="answer : ${question.answerParams}"
                                  th:id="'answerRow' + ${question.questionNumber} + ${answer.number}">
@@ -670,14 +675,25 @@
                                         number: [[${answer.number}]]
                                     })
                                 </script>
-                                <div class="col my-2">
+                                <div class="col range"
+                                     th:if="${question.type == T(ru.mai.opros.entity.enums.AnswerType).SCALE.name()}"
+                                     th:id="'range_' + ${question.questionNumber} + '1'">
+                                    <div class="container">
+                                        <input type="range" class="custom-range" min="1" max="5" step="1">
+                                        <div class="sliderticks">
+                                            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+                                    </div>
+                                </div>
+                                <div class="col my-2"
+                                     th:if="${question.type != T(ru.mai.opros.entity.enums.AnswerType).SCALE.name()}">
                                     <input type="text" class="form-control" name="answerText"
                                            placeholder="Текст ответа"
                                            th:value="${answer.value}"
                                            th:onchange="|onChangeAnswerText(${page.pageNumber}, ${question.questionNumber}, ${answer.number})|"
                                            th:id="'answer' + ${question.questionNumber} + ${answer.number}">
                                 </div>
-                                <div class="col my-2">
+                                <div class="col my-2"
+                                     th:if="${question.type != T(ru.mai.opros.entity.enums.AnswerType).SCALE.name()}">
                                     <button class="btn btn-info"
                                             th:onclick="|deleteAnswer(${answer.number}, ${question.questionNumber}, ${page.pageNumber})|"
                                             th:id="'delAnswerBtn' + ${answer.number}">Удалить ответ
@@ -720,6 +736,10 @@
                     </script>
                     <button class="btn btn-info my-2" type="submit">Сохранить</button>
                 </form>
+            </div>
+            <div class="col">
+                <button type="button" class="btn btn-info my-2"
+                        onclick="copyToClipboard()">Копировать ссылку на опрос</button>
             </div>
         </div>
     </div>

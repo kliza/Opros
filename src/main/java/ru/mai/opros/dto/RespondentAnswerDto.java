@@ -5,8 +5,8 @@ import lombok.Data;
 import java.util.UUID;
 
 @Data
-public class AnswerParamDto {
+public class RespondentAnswerDto {
     private UUID id;
+    private UUID questionId;
     private String value;
-    private Integer number;
 }

@@ -6,6 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,6 +38,10 @@ public class RespondentAnswer {
     @ManyToOne
     @JoinColumn(name = "poll_id")
     private Poll poll;
+
+    @ManyToOne
+    @JoinColumn(name = "answer_param_id")
+    private AnswerParam answerParam;
 
     @Override
     public boolean equals(Object o) {

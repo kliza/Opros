@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 @Getter
 @RequiredArgsConstructor
 public enum AnswerType {
-    SINGLE_CHOICE("Единичный выбор"),
+    SINGLE_CHOICE("Одиночный выбор"),
     MULTIPLE_CHOICE("Множественный выбор"),
     SCALE("Шкала");
 

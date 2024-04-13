@@ -9,6 +9,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -34,9 +35,12 @@ public class SecurityConfig {
                 .csrf(Customizer.withDefaults())
                 .cors(Customizer.withDefaults())
                 .authenticationProvider(authenticationProvider)
+                .sessionManagement(configurer -> configurer.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 mvcMatcherBuilder.pattern(HttpMethod.GET, "/sign-up"),
-                                mvcMatcherBuilder.pattern(HttpMethod.POST, "/sign-up"))
+                                mvcMatcherBuilder.pattern(HttpMethod.POST, "/sign-up"),
+                                mvcMatcherBuilder.pattern(HttpMethod.GET, "/polls/*/respondent"),
+                                mvcMatcherBuilder.pattern(HttpMethod.POST, "/polls/*/respondent/answers"))
                         .permitAll()
                         .anyRequest().authenticated())
                 .formLogin(loginConfigurer -> loginConfigurer
